@@ -2,9 +2,9 @@ import { Bot as Grammy, InlineKeyboard } from "../deps.ts";
 
 const env = Deno.env.toObject();
 
-export type Channel {
+export type Channel = {
   chatId: string | number;
-  threadId?: string | null;
+  threadId?: string | number;
 }
 
 export class Bot {

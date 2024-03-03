@@ -2,8 +2,13 @@ import { Bot as Grammy, InlineKeyboard } from "../deps.ts";
 
 const env = Deno.env.toObject();
 
+export type Channel {
+  chatId: string | number;
+  threadId?: string | null;
+}
+
 export class Bot {
-  private _channels: (string | number)[] = [];
+  private _channels: Channel[] = [];
   private _instance: Grammy;
 
   constructor(token: string = env["TOKEN"], channel: string = "") {
@@ -14,15 +19,15 @@ export class Bot {
     }
 
     if (channel) {
-      this._channels.push(channel);
+      this._channels.push({ chatId: channel });
     }
 
     if (env["WEBHOOK"]) {
-      this._channels.push(env["WEBHOOK"]!);
+      this._channels.push({ chatId: env["WEBHOOK"]!, threadId: env["THREAD_ID"] || undefined});
     }
   }
 
-  public addChannel(channel: string | number) {
+  public addChannel(channel: Channel) {
     this._channels.push(channel);
   }
 
@@ -33,14 +38,20 @@ export class Bot {
    * @param link Some link to attach to the message
    * @returns void
    */
-  public async send(channel: string | number, message: string, link?: string) {
+  public async send(channel: Channel, message: string, link?: string) {
+    let others = {
+      parse_mode: "HTML",
+    };
+
+    if (channel.threadId) {
+      others.message_thread_id = channel.threadId;
+    }
+
     if (!link) {
-      return await this._instance.api.sendMessage(channel, message, {
-        parse_mode: "HTML",
-      });
+      return await this._instance.api.sendMessage(channel.chatId, message, others);
     } else {
-      return await this._instance.api.sendMessage(channel, message, {
-        parse_mode: "HTML",
+      return await this._instance.api.sendMessage(channel.chatId, message, {
+        ...others,
         reply_markup: new InlineKeyboard().url("View it on GitHub", link),
       });
     }
